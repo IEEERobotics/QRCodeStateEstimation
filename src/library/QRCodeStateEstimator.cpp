@@ -198,6 +198,11 @@ bool QRCodeStateEstimator::estimateOneOrMoreStatesFromGrayscaleFrame(const cv::M
   inputQRCodeIdentifiersBuffer.clear();
   inputQRCodeDimensionsBuffer.clear();
 
+  //manually set QR params
+  double QRCodeDimensionInMeters = 0.1524;
+  std::string QRCodeIdentifierString = "IdentString";
+
+  
   for (zbar::Image::SymbolIterator symbol = zbarFrame.symbol_begin();  symbol != zbarFrame.symbol_end();  ++symbol) 
   {
   if(symbol->get_type() != zbar::ZBAR_QRCODE || symbol->get_location_size() != 4)
@@ -205,30 +210,33 @@ bool QRCodeStateEstimator::estimateOneOrMoreStatesFromGrayscaleFrame(const cv::M
   continue; //Skip if it isn't a QR code or its outline is described by more than 4 vertices
   } 
 
+  /*
   double QRCodeDimensionInMeters;
   std::string QRCodeIdentifierString;
   if(extractQRCodeDimensionFromString(symbol->get_data(), QRCodeDimensionInMeters, QRCodeIdentifierString) != true)
   {
-  continue; //Couldn't read dimension
+    continue; //Couldn't read dimension
   }
+  */
 
   //Convert zbar points to opencv points
   std::vector<cv::Point2d> openCVPoints;
   for(int i=0; i < symbol->get_location_size(); i++)
   {
-  openCVPoints.push_back(cv::Point2d(symbol->get_location_x(i), symbol->get_location_y(i)));
+    openCVPoints.push_back(cv::Point2d(symbol->get_location_x(i), symbol->get_location_y(i)));
   }
 
+  
 
   //The center of the coordinate system associated with the QR code is in the center of the rectangle
 
   double buf = QRCodeDimensionInMeters/2.0;
   std::vector<cv::Point3d> objectVerticesInObjectCoordinates = 
   {
-  cv::Point3d(-buf, -buf, 0), 
-  cv::Point3d(buf, -buf, 0),
-  cv::Point3d(buf, buf, 0),
-  cv::Point3d(-buf, buf, 0)
+    cv::Point3d(-buf, -buf, 0), 
+    cv::Point3d(buf, -buf, 0),
+    cv::Point3d(buf, buf, 0),
+    cv::Point3d(-buf, buf, 0)
   };
 
   //Make buffers to get 3x1 rotation vector and 3x1 translation vector
@@ -251,11 +259,11 @@ bool QRCodeStateEstimator::estimateOneOrMoreStatesFromGrayscaleFrame(const cv::M
   //Get opencv transfer matrix (camera -> object)
   for(int row = 0; row < 3; row++)
   {
-  for(int col = 0; col < 3; col ++)
-  {
-  viewMatrix.at<double>(row, col) = rotationMatrix.at<double>(row, col);
-  }
-  viewMatrix.at<double>(row, 3) = translationVector.at<double>(row, 0);
+    for(int col = 0; col < 3; col ++)
+    {
+      viewMatrix.at<double>(row, col) = rotationMatrix.at<double>(row, col);
+    }
+    viewMatrix.at<double>(row, 3) = translationVector.at<double>(row, 0);
   }
   viewMatrix.at<double>(3,3) = 1.0;
 
@@ -273,49 +281,52 @@ bool QRCodeStateEstimator::estimateOneOrMoreStatesFromGrayscaleFrame(const cv::M
 
   if(showResultsInWindow)
   {
-  //Draw base image
-  cv::Mat bufferFrame = inputGrayscaleFrame;
+    //Draw base image
+    cv::Mat bufferFrame = inputGrayscaleFrame;
 
-  // Draw location of the symbols found
-  for (zbar::Image::SymbolIterator symbol = zbarFrame.symbol_begin();  symbol != zbarFrame.symbol_end();  ++symbol) 
-  {
-    if(symbol->get_type() != zbar::ZBAR_QRCODE || symbol->get_location_size() != 4)
+    // Draw location of the symbols found
+    for (zbar::Image::SymbolIterator symbol = zbarFrame.symbol_begin();  symbol != zbarFrame.symbol_end();  ++symbol) 
     {
-      continue; //Skip if it isn't a QR code or its outline is described by more than 4 vertices
-    } 
+      if(symbol->get_type() != zbar::ZBAR_QRCODE || symbol->get_location_size() != 4)
+      {
+        continue; //Skip if it isn't a QR code or its outline is described by more than 4 vertices
+      } 
 
-    double QRCodeDimensionInMeters;
-    std::string QRCodeIdentifierString;
-    if(extractQRCodeDimensionFromString(symbol->get_data(), QRCodeDimensionInMeters, QRCodeIdentifierString) != true)
-    {
-      continue; //Couldn't read dimension
+      double QRCodeDimensionInMeters = 0.15;
+      std::string QRCodeIdentifierString = "StringIdent";
+
+      /*
+      if(extractQRCodeDimensionFromString(symbol->get_data(), QRCodeDimensionInMeters, QRCodeIdentifierString) != true)
+      {
+        continue; //Couldn't read dimension
+      }
+      */
+
+      line(bufferFrame
+          , cv::Point(symbol->get_location_x(0)
+          , symbol->get_location_y(0))
+          , cv::Point(symbol->get_location_x(1)
+          , symbol->get_location_y(1)) 
+          , cv::Scalar(0, 0, 0), 2, 8, 0); //Red 0->1
+      line(bufferFrame
+          , cv::Point(symbol->get_location_x(1)
+          , symbol->get_location_y(1))
+          , cv::Point(symbol->get_location_x(2)
+          , symbol->get_location_y(2))
+          , cv::Scalar(85, 85, 85), 2, 8, 0); //Green 1 -> 2
+      line(bufferFrame, cv::Point(symbol->get_location_x(2) 
+          , symbol->get_location_y(2))
+          , cv::Point(symbol->get_location_x(3)
+          , symbol->get_location_y(3))
+          , cv::Scalar(150, 150, 150), 2, 8, 0); //Blue 2 -> 3
+      line(bufferFrame, cv::Point(symbol->get_location_x(3)
+          , symbol->get_location_y(3)) 
+          , cv::Point(symbol->get_location_x(0), symbol->get_location_y(0)) 
+          , cv::Scalar(255, 255, 255), 2, 8, 0); //Yellow  3 -> 0
     }
 
-    line(bufferFrame
-        , cv::Point(symbol->get_location_x(0)
-        , symbol->get_location_y(0))
-        , cv::Point(symbol->get_location_x(1)
-        , symbol->get_location_y(1)) 
-        , cv::Scalar(0, 0, 0), 2, 8, 0); //Red 0->1
-    line(bufferFrame
-        , cv::Point(symbol->get_location_x(1)
-        , symbol->get_location_y(1))
-        , cv::Point(symbol->get_location_x(2)
-        , symbol->get_location_y(2))
-        , cv::Scalar(85, 85, 85), 2, 8, 0); //Green 1 -> 2
-    line(bufferFrame, cv::Point(symbol->get_location_x(2) 
-        , symbol->get_location_y(2))
-        , cv::Point(symbol->get_location_x(3)
-        , symbol->get_location_y(3))
-        , cv::Scalar(150, 150, 150), 2, 8, 0); //Blue 2 -> 3
-    line(bufferFrame, cv::Point(symbol->get_location_x(3)
-        , symbol->get_location_y(3)) 
-        , cv::Point(symbol->get_location_x(0), symbol->get_location_y(0)) 
-        , cv::Scalar(255, 255, 255), 2, 8, 0); //Yellow  3 -> 0
-  }
-
-  imshow(QRCodeStateEstimatorWindowTitle, bufferFrame);
-  cv::waitKey(30);
+    imshow(QRCodeStateEstimatorWindowTitle, bufferFrame);
+    cv::waitKey(30);
   }
 
 
