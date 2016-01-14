@@ -34,7 +34,13 @@ class QRCodeStateEstimator
 
   @exception: This function can throw exceptions
   */
-  QRCodeStateEstimator(int inputCameraImageWidth, int inputCameraImageHeight, const cv::Mat_<double> &inputCameraCalibrationMatrix, const cv::Mat_<double> &inputCameraDistortionParameters, bool inputShowResultsInWindow = false);
+  QRCodeStateEstimator(
+                  int inputCameraImageWidth
+                , int inputCameraImageHeight
+                , double inputQRDimension
+                , const cv::Mat_<double> &inputCameraCalibrationMatrix
+                , const cv::Mat_<double> &inputCameraDistortionParameters
+                , bool inputShowResultsInWindow = false);
 
   /*
   This function takes a BGR frame of the appropriate size, scans for a QR code with an embedded size (recognized decimal formats: ft, in, cm, mm, m), and stores the pose of the camera (OpenCV format) relative to the coordinate system of the QR tag in the provided buffer.  If multiple tags are recognized, it will only return the information for the first.
@@ -85,7 +91,7 @@ class QRCodeStateEstimator
   bool estimateOneOrMoreStatesFromGrayscaleFrame(const cv::Mat &inputGrayscaleFrame, std::vector<cv::Mat> &inputCameraPosesBuffer, std::vector<std::string> &inputQRCodeIdentifiersBuffer, std::vector<double> &inputQRCodeDimensionsBuffer);
 
 
-
+  int expectedQRDimension;
   int expectedCameraImageWidth;
   int expectedCameraImageHeight;
   cv::Mat_<double> cameraMatrix;  //3x3 matrix

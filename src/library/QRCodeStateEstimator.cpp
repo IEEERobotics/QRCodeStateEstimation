@@ -10,65 +10,72 @@ This function initializes the state estimator with the OpenCV camera calibration
 
 @exception: This function can throw exceptions
 */
-QRCodeStateEstimator::QRCodeStateEstimator(int inputCameraImageWidth, int inputCameraImageHeight, const cv::Mat_<double> &inputCameraCalibrationMatrix, const cv::Mat_<double> &inputCameraDistortionParameters, bool inputShowResultsInWindow)
+QRCodeStateEstimator::QRCodeStateEstimator(
+          int inputCameraImageWidth
+        , int inputCameraImageHeight
+        , double inputQRDimension
+        , const cv::Mat_<double> &inputCameraCalibrationMatrix
+        , const cv::Mat_<double> &inputCameraDistortionParameters
+        , bool inputShowResultsInWindow)
 {
-//Check inputs
-if(inputCameraImageWidth <= 0 || inputCameraImageHeight <= 0)
-{
-  throw SOMException(std::string("Camera image dimensions invalid\n")
-                                 , INVALID_FUNCTION_INPUT 
-                                 , __FILE__, __LINE__);
-}
-
-//Check camera calibration matrix dimensions
-if(inputCameraCalibrationMatrix.dims != 2)
-{
-  throw SOMException(std::string("Camera calibration matrix is not 3x3\n") 
-                     , INVALID_FUNCTION_INPUT
-                     , __FILE__, __LINE__);
-}
-
-for(int i=0; i < inputCameraCalibrationMatrix.dims; i++)
-{
-  if(inputCameraCalibrationMatrix.size[i] != 3)
+  //Check inputs
+  if(inputCameraImageWidth <= 0 || inputCameraImageHeight <= 0)
   {
-    throw SOMException(std::string("Camera calibration matrix is not 3x3\n"), 
-                                  INVALID_FUNCTION_INPUT, 
-                                  __FILE__, __LINE__);
+    throw SOMException(std::string("Camera image dimensions invalid\n")
+                                   , INVALID_FUNCTION_INPUT 
+                                   , __FILE__, __LINE__);
   }
-}
 
-//Check distortion coefficients size
-if(inputCameraDistortionParameters.dims != 2)
-{
-  throw SOMException(std::string("Distortion coefficents vector is not 1x5\n")
-                                , INVALID_FUNCTION_INPUT
-                                , __FILE__, __LINE__);
-}
+  //Check camera calibration matrix dimensions
+  if(inputCameraCalibrationMatrix.dims != 2)
+  {
+    throw SOMException(std::string("Camera calibration matrix is not 3x3\n") 
+                       , INVALID_FUNCTION_INPUT
+                       , __FILE__, __LINE__);
+  }
 
-if(inputCameraDistortionParameters.size[1] != 5 || inputCameraDistortionParameters.size[0] != 1)
-{
-  throw SOMException(std::string("Distortion coefficents vector is not 1x5\n")
-                                , INVALID_FUNCTION_INPUT
-                                , __FILE__, __LINE__);
-}
+  for(int i=0; i < inputCameraCalibrationMatrix.dims; i++)
+  {
+    if(inputCameraCalibrationMatrix.size[i] != 3)
+    {
+      throw SOMException(std::string("Camera calibration matrix is not 3x3\n"), 
+                                    INVALID_FUNCTION_INPUT, 
+                                    __FILE__, __LINE__);
+    }
+  }
 
-expectedCameraImageWidth = inputCameraImageWidth;
-expectedCameraImageHeight = inputCameraImageHeight;
+  //Check distortion coefficients size
+  if(inputCameraDistortionParameters.dims != 2)
+  {
+    throw SOMException(std::string("Distortion coefficents vector is not 1x5\n")
+                                  , INVALID_FUNCTION_INPUT
+                                  , __FILE__, __LINE__);
+  }
 
-cameraMatrix = inputCameraCalibrationMatrix;
-distortionParameters = inputCameraDistortionParameters;
-showResultsInWindow = inputShowResultsInWindow;
+  if(inputCameraDistortionParameters.size[1] != 5 || inputCameraDistortionParameters.size[0] != 1)
+  {
+    throw SOMException(std::string("Distortion coefficents vector is not 1x5\n")
+                                  , INVALID_FUNCTION_INPUT
+                                  , __FILE__, __LINE__);
+  }
 
-//Configure the QR code reader object
-zbarScanner.set_config(zbar::ZBAR_QRCODE , zbar::ZBAR_CFG_ENABLE, 1);
-zbarScanner.enable_cache(false); //Set it so that it will show QR code result even if it was in the last frame
+  expectedCameraImageWidth = inputCameraImageWidth;
+  expectedCameraImageHeight = inputCameraImageHeight;
+  expectedQRDimension = inputQRDimension;
 
-//Create window to show results, if we are suppose to
-if(showResultsInWindow == true)
-{
-  cv::namedWindow(QRCodeStateEstimatorWindowTitle, CV_WINDOW_AUTOSIZE);
-}
+  cameraMatrix = inputCameraCalibrationMatrix;
+  distortionParameters = inputCameraDistortionParameters;
+  showResultsInWindow = inputShowResultsInWindow;
+
+  //Configure the QR code reader object
+  zbarScanner.set_config(zbar::ZBAR_QRCODE , zbar::ZBAR_CFG_ENABLE, 1);
+  zbarScanner.enable_cache(false); //Set it so that it will show QR code result even if it was in the last frame
+
+  //Create window to show results, if we are suppose to
+  if(showResultsInWindow == true)
+  {
+    cv::namedWindow(QRCodeStateEstimatorWindowTitle, CV_WINDOW_AUTOSIZE);
+  }
 }
 
 /*

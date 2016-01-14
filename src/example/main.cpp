@@ -5,6 +5,8 @@
 #include "../library/QRCodeStateEstimator.hpp"
 #include<cmath>
 
+#define IEEE_QR_SIZE (0.0381)
+
 int main(int argc, char **argv) 
 {
   ///////////////////////A few tests to make sure strings are processed right////////////
@@ -102,7 +104,8 @@ int main(int argc, char **argv)
   //Initialize the state estimator, while wrapping any exceptions so we know where it came from
   std::unique_ptr<QRCodeStateEstimator> stateEstimator;
   SOM_TRY
-  stateEstimator.reset(new QRCodeStateEstimator(1280, 720, cameraMatrix, distortionParameters, true));
+  stateEstimator.reset(new QRCodeStateEstimator(1280, 720,
+                                               IEEE_QR_SIZE, cameraMatrix, distortionParameters, true));
   SOM_CATCH("Error initializing state estimator\n")
 
   //Initialize some variables we are going to use while processing frames
